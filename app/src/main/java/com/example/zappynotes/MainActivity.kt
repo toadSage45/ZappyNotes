@@ -7,10 +7,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
+import com.example.zappynotes.data.local.NoteDatabase
+import com.example.zappynotes.navigation.NavGraph
+import com.example.zappynotes.presentation.home.NoteViewModel
 import com.example.zappynotes.ui.theme.ZappyNotesTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,28 +24,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             ZappyNotesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    val applicationContext = LocalContext.current
+                    val db = Room.databaseBuilder(
+                        applicationContext ,
+                        NoteDatabase::class.java ,
+                        "notes.db"
+                    ).build()
+
+                    val dao = db.dao
+
+                    val navController = rememberNavController()
+                    val viewModel = NoteViewModel(dao)
+                    NavGraph(navController = navController,
+                        viewModel = viewModel ,
+                        modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ZappyNotesTheme {
-        Greeting("Android")
-    }
-}
