@@ -2,8 +2,10 @@ package com.example.zappynotes.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.zappynotes.data.local.NoteDao
+import com.example.zappynotes.di.Graph
 import com.example.zappynotes.domain.model.Note
+import com.example.zappynotes.domain.repository.NoteRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -11,15 +13,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class NoteViewModel(private val dao: NoteDao) : ViewModel() {
+class NoteViewModel(private val noteRepository: NoteRepository = Graph.noteRepository) : ViewModel() {
 
-    private val _notes = dao.getNotes()
+    private val _notes = noteRepository.getNotes()
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(),
             emptyList()
         )
-
 
     private val _state = MutableStateFlow(NoteState())
     val state = combine(_state, _notes) { state, notes ->
@@ -36,20 +37,27 @@ class NoteViewModel(private val dao: NoteDao) : ViewModel() {
         when (event) {
             is NoteEvent.DeleteNote -> {
                 viewModelScope.launch {
-                    dao.deleteNote(event.note)
+                    noteRepository.deleteNote(event.note)
                 }
 
             }
+            is NoteEvent.SetNoteId -> {
+                _state.update {
+                    it.copy(
+                        noteId = event.id
+                    )
+                }
+            }
 
-            is NoteEvent.SaveNote -> {
+            is NoteEvent.AddNote -> {
                 val title = _state.value.title
                 val content = _state.value.content
                 val color = _state.value.color
                 if (title.isBlank() || content.isBlank()) {
                     return
                 }
-                viewModelScope.launch {
-                    dao.upsertNote(
+                viewModelScope.launch(Dispatchers.IO) {
+                    noteRepository.addNote(
                         Note(
                             title = title,
                             content = content,
@@ -60,26 +68,16 @@ class NoteViewModel(private val dao: NoteDao) : ViewModel() {
 
                     _state.update {
                         it.copy(
+                            noteId = -1,
                             title = "",
                             content = "",
-                            color = 0,
+                            color = Note.noteColor.first().hashCode(),
+                            selectedNote = null
                         )
                     }
                 }
             }
 
-
-
-            is NoteEvent.QueryNotes -> {
-                viewModelScope.launch {
-                    dao.searchNotes(event.query).collect { notes ->
-                        _state.update {
-                            it.copy(notes = notes)
-                        }
-                    }
-                }
-
-            }
 
             is NoteEvent.SetColor -> {
                 _state.update {
@@ -96,27 +94,77 @@ class NoteViewModel(private val dao: NoteDao) : ViewModel() {
                     )
                 }
             }
+
             is NoteEvent.SetTitle -> {
                 _state.update {
                     it.copy(
                         title = event.title
                     )
                 }
+            }
+
+            is NoteEvent.GetNoteById -> {
+                viewModelScope.launch {
+                    val note = noteRepository.getNoteById(event.id)
+                    _state.update {
+                        it.copy(
+                            selectedNote = note
+                        )
+                    }
                 }
-            is NoteEvent.ToggleSearch -> {
-                _state.update {
-                    it.copy(
-                        toggleSearch = !it.toggleSearch
+            }
+
+            is NoteEvent.UpdateNote -> {
+                val id = _state.value.noteId
+                val title = _state.value.title
+                val content = _state.value.content
+                val color = _state.value.color
+                if (title.isBlank() || content.isBlank()) {
+                    return
+                }
+
+                viewModelScope.launch(Dispatchers.IO) {
+                    noteRepository.updateNote(
+                        Note(
+                            id = id,
+                            title = title,
+                            content = content,
+                            color = color,
+                            timestamp = System.currentTimeMillis()
+                        )
                     )
+
+                    _state.update {
+                        it.copy(
+                            noteId = -1,
+                            title = "",
+                            content = "",
+                            color = Note.noteColor.first().hashCode(),
+                            selectedNote = null
+                        )
+                    }
                 }
-        }
-            is NoteEvent.ShowDialog -> {
+            }
+
+            is NoteEvent.ShowHomeScreen -> {
                 _state.update {
                     it.copy(
-                        isNoteDialogOpen = true
+                        noteId = -1,
+                        title = "",
+                        content = "",
+                        color = Note.noteColor.first().hashCode(),
+                        selectedNote = null
                     )
                 }
             }
+
+//            is NoteEvent.SetSelectedNote -> {
+//                _state.update {
+//                    it.copy(
+//                        selectedNote = event.note
+//                    )
+//                }
+//            }
+        }
     }
-}
 }

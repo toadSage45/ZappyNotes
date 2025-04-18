@@ -10,6 +10,7 @@ import androidx.compose.material3.Scaffold
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.example.zappynotes.data.local.NoteDatabase
@@ -24,17 +25,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             ZappyNotesTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val applicationContext = LocalContext.current
-                    val db = Room.databaseBuilder(
-                        applicationContext ,
-                        NoteDatabase::class.java ,
-                        "notes.db"
-                    ).build()
-
-                    val dao = db.dao
-
                     val navController = rememberNavController()
-                    val viewModel = NoteViewModel(dao)
+                    val viewModel : NoteViewModel = viewModel()
                     NavGraph(navController = navController,
                         viewModel = viewModel ,
                         modifier = Modifier.padding(innerPadding))

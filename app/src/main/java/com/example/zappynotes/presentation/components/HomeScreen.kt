@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.zappynotes.domain.model.Note
+import com.example.zappynotes.navigation.Screen
 import com.example.zappynotes.presentation.home.NoteEvent
 import com.example.zappynotes.presentation.home.NoteState
 
@@ -44,7 +45,7 @@ fun HomeScreen(
         modifier = modifier.background(color = Color.White),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("add_edit_note?noteId=${-1}") }
+                onClick = { navController.navigate(Screen.AddEditNote.toPassArgs(-1)) }
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -55,8 +56,9 @@ fun HomeScreen(
     ) {
 
         fun onNoteClick(note: Note){
+           onEvent(NoteEvent.GetNoteById(note.id))
             navController.navigate(
-                "add_edit_note?noteId=${note.id}"
+                Screen.AddEditNote.toPassArgs(note.id)
             )
         }
 

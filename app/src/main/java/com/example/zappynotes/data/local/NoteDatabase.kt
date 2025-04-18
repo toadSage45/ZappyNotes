@@ -13,5 +13,5 @@ import com.example.zappynotes.domain.model.Note
 
 
 abstract class NoteDatabase : RoomDatabase() {
-    abstract val dao : NoteDao
+    abstract val noteDao : NoteDao
 }
