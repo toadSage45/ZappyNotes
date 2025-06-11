@@ -1,4 +1,4 @@
-package com.example.zappynotes.presentation.home
+package com.example.zappynotes.presentation.home.note
 
 import com.example.zappynotes.domain.model.Note
 
